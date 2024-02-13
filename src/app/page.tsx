@@ -34,6 +34,7 @@ async function getStockData(market: string, date: string): Promise<IStock[]> {
     }
   );
   const result = await res.text();
+  console.log("result: ", result);
   if (!res.ok) {
     // This will activate the closest `error.js` Error Boundary
     throw new Error("Failed to fetch data");
@@ -62,39 +63,20 @@ async function getMarketData(): Promise<IMarket[]> {
 export default function Home() {
   const [value, onChange] = useState<Date>(new Date());
   const [markets, setMarkets] = useState<IMarket[]>([]);
-  const [selectedMarket, setSelectedMarket] = useState<string>("UK");
+  const [selectedMarket, setSelectedMarket] = useState<string>("US");
   const [stockList, setStockList] = useState<IStock[]>();
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (loading) return;
     setLoading(true);
-    if (!markets.length) {
-      getMarketData()
-        .then((markets) => {
-          setMarkets(markets);
-        })
-        .then(() => {
-          getStockData(selectedMarket, moment(value).format("YYYY-MM-DD")).then(
-            (data) => {
-              console.log("data: ", data);
-              setStockList(data);
-            }
-          );
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      getStockData(selectedMarket, moment(value).format("YYYY-MM-DD"))
-        .then((data) => {
-          console.log("data: ", data);
-          setStockList(data);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
+    getStockData(selectedMarket, moment(value).format("YYYY-MM-DD"))
+      .then((data) => {
+        setStockList(data);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [value, selectedMarket]);
 
   return (
@@ -118,20 +100,26 @@ export default function Home() {
             value={selectedMarket}
             onChange={(event) => setSelectedMarket(event.target.value)}
           >
-            {markets?.map((market, index) => {
-              return (
-                <option key={`market_${index}`} value={market.m}>
-                  {market.m}
-                </option>
-              );
-            })}
+            {[{ m: "US" }, { m: "UK" }, { m: "HK" }, { m: "JP" }].map(
+              (market, index) => {
+                return (
+                  <option key={`market_${index}`} value={market.m}>
+                    {market.m}
+                  </option>
+                );
+              }
+            )}
           </select>
           <div>
             {stockList && stockList.length > 0
               ? stockList?.map((stock, index) => {
                   return (
                     <li key={`stock_${index}`} style={{ margin: 10 }}>
-                      <Link href={`/stock/${stock.s}`}>{stock.s}</Link>
+                      <Link
+                        href={`https://www.tradingview.com/chart?symbol=${stock.s}`}
+                      >
+                        {stock.s}
+                      </Link>
                     </li>
                   );
                 })
